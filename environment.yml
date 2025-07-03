@@ -1,0 +1,22 @@
+name: ts-forecast
+channels:
+  - conda-forge
+dependencies:
+  # ── Python core ─────────────────────────────────────────────────────────────
+  - python =3.11
+  - numpy
+  - pandas
+  - scikit-learn
+  - rpy2           # Python ↔ R bridge
+  - matplotlib
+  # TensorFlow/Keras: on CPU you can stay with the conda build;
+  # on GPU or Apple Silicon see the notes below.
+  - tensorflow =2.18.*
+  # ── R runtime & forecasting stack ───────────────────────────────────────────
+  - r-base =4.3
+  - r-forecast
+  - r-tsibble       # fable needs tsibble; nice to have even without fable
+  - r-fable         # optional, but useful for diagnostics
+  - r-tidyverse     # dplyr, ggplot2, etc.
+  # ── Jupyter (optional) ──────────────────────────────────────────────────────
+  - jupyterlab

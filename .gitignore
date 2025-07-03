@@ -1,0 +1,78 @@
+#------------------------------------------------------------------------------
+#  GLOBAL
+#------------------------------------------------------------------------------
+*.log
+*.tmp
+.DS_Store
+Thumbs.db
+
+#------------------------------------------------------------------------------
+#  PYTHON
+#------------------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*.pyo
+# Compiled C extensions
+*.so
+# Virtual-/Conda-envs placed in repo (discouraged, but just in case)
+env/
+.venv/
+# PyInstaller / build artifacts
+build/
+dist/
+*.egg-info/
+# Jupyter runtime & checkpoints
+.ipynb_checkpoints/
+*.ipynb~       # Jupyter autosave
+# VS Code Python settings
+.vscode/settings.json
+
+#------------------------------------------------------------------------------
+#  R
+#------------------------------------------------------------------------------
+.Rhistory
+.RData
+.Ruserdata
+.Rproj.user/
+.Rbuildignore
+# renv cache / lock snapshot folders
+renv/library/
+renv/staging/
+
+#------------------------------------------------------------------------------
+#  ENVIRONMENT & PACKAGE MANAGERS
+#------------------------------------------------------------------------------
+# Conda env metadata (can be huge)
+*.conda
+*.lock
+# Poetry / Pipenv
+poetry.lock
+Pipfile.lock
+
+#------------------------------------------------------------------------------
+#  NOTEBOOK & PLOT OUTPUTS
+#------------------------------------------------------------------------------
+# Matplotlib & other library caches
+.matplotlib/
+plot.png
+*.pdf
+
+#------------------------------------------------------------------------------
+#  DATA & MODELS
+#------------------------------------------------------------------------------
+# Local data, intermediate results, trained models
+data/
+output/
+*.h5
+*.rds
+*.pkl
+# Large synthetic test sets (keep small examples only)
+synthetic/
+
+#------------------------------------------------------------------------------
+#  OS / IDE MISC
+#------------------------------------------------------------------------------
+.idea/
+.vscode/
+*.swp
+*~
