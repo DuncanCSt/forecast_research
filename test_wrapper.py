@@ -25,6 +25,7 @@ lstm_res = forecast_model(
     lag=30,           # use 30-point windows
     epochs=40,
     verbose=0,
+    n_components=2,
 )
 
 # 3) ── ARIMA forecast (auto-arima) ───────────────────────────────────────────
@@ -33,16 +34,17 @@ arima_res = forecast_model(
     y_train=y_train,
     steps=5,
     frequency=1,      # not strictly needed here (no seasonality)
+    n_components=2,
     # order=(2,1,2),  # uncomment to pin (p,d,q) instead of auto search
 )
 
 # 4) ── Compare outputs ───────────────────────────────────────────────────────
 print("Target (next 5 actual points):")
 print(y_test[:5])
-print("\nLSTM  forecast:")
-print(lstm_res["forecast"])
-print("\nARIMA forecast:")
-print(arima_res["forecast"])
+print("\nLSTM  forecast mixture means:")
+print(lstm_res["forecast_pdf"]["means"])
+print("\nARIMA forecast mixture means:")
+print(arima_res["forecast_pdf"]["means"])
 
 # Optional: quick plot if you have matplotlib
 try:
@@ -50,8 +52,10 @@ try:
 
     plt.plot(np.arange(len(y)), y, label="Actual", lw=1)
     future_idx = np.arange(len(y_train), len(y_train) + 5)
-    plt.plot(future_idx, lstm_res["forecast"], "o-", label="LSTM")
-    plt.plot(future_idx, arima_res["forecast"], "s-", label="ARIMA")
+    lstm_mean = lstm_res["forecast_pdf"]["means"] @ lstm_res["forecast_pdf"]["weights"]
+    arima_mean = arima_res["forecast_pdf"]["means"] @ arima_res["forecast_pdf"]["weights"]
+    plt.plot(future_idx, lstm_mean, "o-", label="LSTM")
+    plt.plot(future_idx, arima_mean, "s-", label="ARIMA")
     plt.axvline(len(y_train) - 0.5, color="grey", ls="--")
     plt.legend()
     plt.title("Wrapper smoke test")
