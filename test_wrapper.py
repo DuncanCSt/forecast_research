@@ -4,9 +4,15 @@
 # ----------------------------------------------------
 # Run from your conda env with:  python test_wrapper.py
 
-from pathlib import Path
 import numpy as np
 from forecast_wrapper import forecast_model
+
+
+def _mixture_mean_std(means: np.ndarray, sds: np.ndarray, weights: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    """Return the mixture mean and standard deviation for each step."""
+    mean = means @ weights
+    var = (sds**2 + means**2) @ weights - mean**2
+    return mean, np.sqrt(var)
 
 # 1) ── Generate a simple synthetic series ────────────────────────────────────
 #    y(t) = sin(2πt / 20)  + gaussian noise
@@ -52,10 +58,35 @@ try:
 
     plt.plot(np.arange(len(y)), y, label="Actual", lw=1)
     future_idx = np.arange(len(y_train), len(y_train) + 5)
-    lstm_mean = lstm_res["forecast_pdf"]["means"] @ lstm_res["forecast_pdf"]["weights"]
-    arima_mean = arima_res["forecast_pdf"]["means"] @ arima_res["forecast_pdf"]["weights"]
-    plt.plot(future_idx, lstm_mean, "o-", label="LSTM")
-    plt.plot(future_idx, arima_mean, "s-", label="ARIMA")
+
+    lstm_pdf = lstm_res["forecast_pdf"]
+    arima_pdf = arima_res["forecast_pdf"]
+
+    lstm_mean, lstm_std = _mixture_mean_std(
+        lstm_pdf["means"], lstm_pdf["sds"], lstm_pdf["weights"]
+    )
+    arima_mean, arima_std = _mixture_mean_std(
+        arima_pdf["means"], arima_pdf["sds"], arima_pdf["weights"]
+    )
+
+    line = plt.plot(future_idx, lstm_mean, "o-", label="LSTM")[0]
+    plt.fill_between(
+        future_idx,
+        lstm_mean - 1.96 * lstm_std,
+        lstm_mean + 1.96 * lstm_std,
+        color=line.get_color(),
+        alpha=0.2,
+    )
+
+    line = plt.plot(future_idx, arima_mean, "s-", label="ARIMA")[0]
+    plt.fill_between(
+        future_idx,
+        arima_mean - 1.96 * arima_std,
+        arima_mean + 1.96 * arima_std,
+        color=line.get_color(),
+        alpha=0.2,
+    )
+
     plt.axvline(len(y_train) - 0.5, color="grey", ls="--")
     plt.legend()
     plt.title("Wrapper smoke test")
