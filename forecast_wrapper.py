@@ -41,6 +41,7 @@ import pathlib
 from typing import Any, Dict, Sequence
 
 import numpy as np
+from sklearn.mixture import GaussianMixture
 
 # ---------------------------------------------------------------------------
 # Optional rpy2 / R setup for ARIMA back‑end
@@ -94,10 +95,12 @@ def forecast_model(
 
     # --------------------------------- LSTM --------------------------------
     if model_key == "LSTM":
-        forecast, fitted_model = forecast_lstm(y_train=y_train_arr, steps=steps, **kwargs)
+        forecast_pdf, fitted_model = forecast_lstm(
+            y_train=y_train_arr, steps=steps, **kwargs
+        )
         return {
             "model": "LSTM",
-            "forecast": forecast,
+            "forecast_pdf": forecast_pdf,
             "meta": {"keras_model": fitted_model},
         }
 
@@ -110,6 +113,9 @@ def forecast_model(
         xreg_train = _py_none_to_r_null(kwargs.pop("xreg_train", None))
         xreg_future = _py_none_to_r_null(kwargs.pop("xreg_future", None))
 
+        n_components = kwargs.pop("n_components", 1)
+        random_state = kwargs.pop("random_state", None)
+
         # rpy2 will auto‑convert numpy arrays / pandas frames
         r_res = _forecast_arima_r(
             y_train_arr,
@@ -121,9 +127,22 @@ def forecast_model(
 
         forecast_np = np.asarray(r_res.rx2("forecast"), dtype=float)
         fitted_model_r = r_res.rx2("model")
+
+        resid_r = ro.r["residuals"](fitted_model_r)
+        resid = np.asarray(resid_r, dtype=float)
+        gmm = GaussianMixture(n_components=n_components, random_state=random_state)
+        gmm.fit(resid.reshape(-1, 1))
+
+        comp_means = gmm.means_.reshape(1, -1)
+        comp_vars = gmm.covariances_.reshape(gmm.n_components, -1)[:, 0]
+        comp_sds = np.sqrt(comp_vars)
+        means = forecast_np.reshape(-1, 1) + comp_means
+        sds = np.tile(comp_sds, (steps, 1))
+        forecast_pdf = {"weights": gmm.weights_, "means": means, "sds": sds}
+
         return {
             "model": "ARIMA",
-            "forecast": forecast_np,
+            "forecast_pdf": forecast_pdf,
             "meta": {"r_model": fitted_model_r},
         }
 

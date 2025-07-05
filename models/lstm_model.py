@@ -17,6 +17,7 @@ from typing import Optional, Sequence, Tuple
 
 import numpy as np
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
+from sklearn.mixture import GaussianMixture
 from tensorflow.keras import Sequential
 from tensorflow.keras.callbacks import EarlyStopping
 from tensorflow.keras.layers import Dense, LSTM
@@ -95,7 +96,9 @@ def forecast_lstm(
     scaler: str | None = "standard",
     patience: int = 5,
     verbose: int = 0,
-) -> Tuple[np.ndarray, Sequential]:
+    n_components: int = 1,
+    random_state: int | None = None,
+) -> Tuple[dict, Sequential]:
     """Fit an LSTM (optionally with covariates) and issue a recursive forecast.
 
     Parameters
@@ -115,8 +118,9 @@ def forecast_lstm(
 
     Returns
     -------
-    forecast : np.ndarray  (shape = ``(steps,)``)
-        Predictions in the **original (unscaled) space**.
+    forecast : dict
+        Mixture parameters with keys ``weights``, ``means`` and ``sds``. ``means``
+        has shape ``(steps, n_components)``.
     model : keras.Sequential
         Fitted Keras model.
     """
@@ -184,6 +188,21 @@ def forecast_lstm(
         verbose=verbose,
     )
 
+    # --------------------------- Residual mixture ---------------------------
+    y_pred_train_scaled = model.predict(X, verbose=0).flatten()
+    if scaler_y is not None:
+        y_pred_train = scaler_y.inverse_transform(
+            y_pred_train_scaled.reshape(-1, 1)
+        ).flatten()
+        y_actual_train = y_arr[lag:]
+    else:
+        y_pred_train = y_pred_train_scaled
+        y_actual_train = y_arr[lag:]
+
+    resid = y_actual_train - y_pred_train
+    gmm = GaussianMixture(n_components=n_components, random_state=random_state)
+    gmm.fit(resid.reshape(-1, 1))
+
     # --------------------------- Recursive forecast -------------------------
     y_hist = y_scaled.copy()
     if n_cov > 0:
@@ -215,4 +234,11 @@ def forecast_lstm(
     else:
         preds = preds_scaled_arr
 
-    return preds, model
+    comp_means = gmm.means_.reshape(1, -1)
+    comp_vars = gmm.covariances_.reshape(gmm.n_components, -1)[:, 0]
+    comp_sds = np.sqrt(comp_vars)
+    means = preds.reshape(-1, 1) + comp_means
+    sds = np.tile(comp_sds, (steps, 1))
+    forecast_pdf = {"weights": gmm.weights_, "means": means, "sds": sds}
+
+    return forecast_pdf, model
