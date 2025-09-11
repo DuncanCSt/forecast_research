@@ -6,7 +6,7 @@
 
 import numpy as np
 from forecast_wrapper import forecast_model
-
+import matplotlib.pyplot as plt
 
 def _mixture_mean_std(means: np.ndarray, sds: np.ndarray, weights: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     """Return the mixture mean and standard deviation for each step."""
@@ -44,6 +44,15 @@ arima_res = forecast_model(
     # order=(2,1,2),  # uncomment to pin (p,d,q) instead of auto search
 )
 
+# 3b) ── HMM forecast (hmmTMB via rpy2) ───────────────────────────────────────
+hmm_res = forecast_model(
+    model="HMM",
+    y_train=y_train,
+    steps=5,
+    n_states=2,
+    hid_formula=None
+)
+
 # 4) ── Compare outputs ───────────────────────────────────────────────────────
 print("Target (next 5 actual points):")
 print(y_test[:5])
@@ -51,45 +60,56 @@ print("\nLSTM  forecast mixture means:")
 print(lstm_res["forecast_pdf"]["means"])
 print("\nARIMA forecast mixture means:")
 print(arima_res["forecast_pdf"]["means"])
+print("\nHMM   forecast mixture means:")
+print(hmm_res["forecast_pdf"]["means"])
 
-# Optional: quick plot if you have matplotlib
-try:
-    import matplotlib.pyplot as plt
 
-    plt.plot(np.arange(len(y)), y, label="Actual", lw=1)
-    future_idx = np.arange(len(y_train), len(y_train) + 5)
+plt.plot(np.arange(len(y)), y, label="Actual", lw=1)
+future_idx = np.arange(len(y_train), len(y_train) + 5)
 
-    lstm_pdf = lstm_res["forecast_pdf"]
-    arima_pdf = arima_res["forecast_pdf"]
+lstm_pdf = lstm_res["forecast_pdf"]
+arima_pdf = arima_res["forecast_pdf"]
+hmm_pdf = hmm_res["forecast_pdf"]
 
-    lstm_mean, lstm_std = _mixture_mean_std(
-        lstm_pdf["means"], lstm_pdf["sds"], lstm_pdf["weights"]
-    )
-    arima_mean, arima_std = _mixture_mean_std(
-        arima_pdf["means"], arima_pdf["sds"], arima_pdf["weights"]
-    )
+lstm_mean, lstm_std = _mixture_mean_std(
+    lstm_pdf["means"], lstm_pdf["sds"], lstm_pdf["weights"]
+)
+arima_mean, arima_std = _mixture_mean_std(
+    arima_pdf["means"], arima_pdf["sds"], arima_pdf["weights"]
+)
+hmm_mean, hmm_std = _mixture_mean_std(
+    hmm_pdf["means"], hmm_pdf["sds"], hmm_pdf["weights"]
+)
 
-    line = plt.plot(future_idx, lstm_mean, "o-", label="LSTM")[0]
-    plt.fill_between(
-        future_idx,
-        lstm_mean - 1.96 * lstm_std,
-        lstm_mean + 1.96 * lstm_std,
-        color=line.get_color(),
-        alpha=0.2,
-    )
+line = plt.plot(future_idx, lstm_mean, "o-", label="LSTM")[0]
+plt.fill_between(
+    future_idx,
+    lstm_mean - 1.96 * lstm_std,
+    lstm_mean + 1.96 * lstm_std,
+    color=line.get_color(),
+    alpha=0.2,
+)
 
-    line = plt.plot(future_idx, arima_mean, "s-", label="ARIMA")[0]
-    plt.fill_between(
-        future_idx,
-        arima_mean - 1.96 * arima_std,
-        arima_mean + 1.96 * arima_std,
-        color=line.get_color(),
-        alpha=0.2,
-    )
+line = plt.plot(future_idx, arima_mean, "s-", label="ARIMA")[0]
+plt.fill_between(
+    future_idx,
+    arima_mean - 1.96 * arima_std,
+    arima_mean + 1.96 * arima_std,
+    color=line.get_color(),
+    alpha=0.2,
+)
 
-    plt.axvline(len(y_train) - 0.5, color="grey", ls="--")
-    plt.legend()
-    plt.title("Wrapper smoke test")
-    plt.show()
-except ImportError:
-    pass
+line = plt.plot(future_idx, hmm_mean, "^-", label="HMM")[0]
+plt.fill_between(
+    future_idx,
+    hmm_mean - 1.96 * hmm_std,
+    hmm_mean + 1.96 * hmm_std,
+    color=line.get_color(),
+    alpha=0.2,
+)
+
+plt.axvline(len(y_train) - 0.5, color="grey", ls="--")
+plt.legend()
+plt.title("Wrapper smoke test")
+plt.show()
+

@@ -18,5 +18,12 @@ dependencies:
   - r-tsibble       # fable needs tsibble; nice to have even without fable
   - r-fable         # optional, but useful for diagnostics
   - r-tidyverse     # dplyr, ggplot2, etc.
+  - r-remotes       # for install_local/install_github
+  - r-tmb           # TMB dependency used by hmmTMB
+  # ── Build toolchain for R/C++ packages ─────────────────────────────────────
+  - git
+  - make
+  - pkg-config
+  - gxx_linux-64
   # ── Jupyter (optional) ──────────────────────────────────────────────────────
   - jupyterlab

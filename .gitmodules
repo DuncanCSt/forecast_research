@@ -1,0 +1,4 @@
+[submodule "vendor/hmmTMB"]
+	path = vendor/hmmTMB
+	url = https://github.com/DuncanCSt/hmmTMB.git
+	branch = forecast_dev

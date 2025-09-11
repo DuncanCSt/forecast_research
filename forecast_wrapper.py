@@ -44,7 +44,7 @@ import numpy as np
 from sklearn.mixture import GaussianMixture
 
 # ---------------------------------------------------------------------------
-# Optional rpy2 / R setup for ARIMA back‑end
+# Optional rpy2 / R setup (lazy‑load helpers per backend)
 # ---------------------------------------------------------------------------
 try:
     import rpy2.robjects as ro
@@ -52,18 +52,21 @@ try:
 
     numpy2ri.activate()
     pandas2ri.activate()
-
-    # Locate R helper: ./models/arima_model.R
-    R_HELPER_PATH = pathlib.Path(__file__).resolve().parent / "models" / "arima_model.R"
-    if not R_HELPER_PATH.exists():
-        raise FileNotFoundError("models/arima_model.R not found relative to forecast_wrapper.py")
-
-    ro.r.source(str(R_HELPER_PATH))
-    _forecast_arima_r = ro.globalenv["forecast_arima"]
     _RPY2_AVAILABLE = True
-except (ImportError, FileNotFoundError) as _err:
+except ImportError:
     _RPY2_AVAILABLE = False
-    _forecast_arima_r = None
+    ro = None  # type: ignore
+
+_forecast_arima_r = None
+_forecast_hmm_r = None
+
+def _load_r_helper(func_name: str, filename: str):
+    """Source an R helper file and return a callable from R globalenv."""
+    helper_path = pathlib.Path(__file__).resolve().parent / "models" / filename
+    if not helper_path.exists():
+        raise FileNotFoundError(f"models/{filename} not found relative to forecast_wrapper.py")
+    ro.r.source(str(helper_path))
+    return ro.globalenv[func_name]
 
 # ---------------------------------------------------------------------------
 # Local LSTM back‑end (pure Python)
@@ -109,6 +112,10 @@ def forecast_model(
         if not _RPY2_AVAILABLE:
             raise ImportError("ARIMA back‑end requires rpy2 and models/arima_model.R")
 
+        global _forecast_arima_r
+        if _forecast_arima_r is None:
+            _forecast_arima_r = _load_r_helper("forecast_arima", "arima_model.r")
+
         # Pull known special‑case kwargs first
         xreg_train = _py_none_to_r_null(kwargs.pop("xreg_train", None))
         xreg_future = _py_none_to_r_null(kwargs.pop("xreg_future", None))
@@ -150,6 +157,51 @@ def forecast_model(
     if model_key == "RNN":
         raise NotImplementedError("RNN back‑end not yet implemented.")
     if model_key == "HMM":
-        raise NotImplementedError("HMM back‑end not yet implemented.")
+        if not _RPY2_AVAILABLE:
+            raise ImportError("HMM back‑end requires rpy2 and models/hmm_model.r")
+
+        global _forecast_hmm_r
+        if _forecast_hmm_r is None:
+            _forecast_hmm_r = _load_r_helper("forecast_hmm", "hmm_model.r")
+
+        # Known kwargs
+        xreg_train = _py_none_to_r_null(kwargs.pop("xreg_train", None))
+        xreg_future = _py_none_to_r_null(kwargs.pop("xreg_future", None))
+        n_states = kwargs.pop("n_states", 2)
+        hid_formula = _py_none_to_r_null(kwargs.pop("hid_formula", None))
+        obs_formula = _py_none_to_r_null(kwargs.pop("obs_formula", None))
+        obs_dist = kwargs.pop("obs_dist", "norm")
+        starting_state_distribution = kwargs.pop("starting_state_distribution", "last")
+
+        # Call R: returns list(forecast=<vec>, sd=<vec>, model=<HMM>)
+        r_res = _forecast_hmm_r(
+            y_train_arr,
+            steps,
+            xreg_train=xreg_train,
+            xreg_future=xreg_future,
+            n_states=n_states,
+            hid_formula=hid_formula,
+            obs_formula=obs_formula,
+            obs_dist=obs_dist,
+            starting_state_distribution=starting_state_distribution,
+        )
+
+        means_np = np.asarray(r_res.rx2("forecast"), dtype=float)
+        if "sd" in list(r_res.names):
+            sds_np = np.asarray(r_res.rx2("sd"), dtype=float)
+        else:
+            sds_np = np.zeros_like(means_np)
+
+        forecast_pdf = {
+            "weights": np.array([1.0]),
+            "means": means_np.reshape(-1, 1),
+            "sds": sds_np.reshape(-1, 1),
+        }
+
+        return {
+            "model": "HMM",
+            "forecast_pdf": forecast_pdf,
+            "meta": {"r_model": r_res.rx2("model")},
+        }
 
     raise ValueError(f"Unknown model type: {model}")
