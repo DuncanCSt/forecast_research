@@ -71,7 +71,7 @@ def _load_r_helper(func_name: str, filename: str):
 # ---------------------------------------------------------------------------
 # Local LSTM back‑end (pure Python)
 # ---------------------------------------------------------------------------
-from models.lstm_model import forecast_lstm
+from forecast_research.models.lstm_model import forecast_lstm
 
 __all__ = ["forecast_model"]
 

@@ -17,7 +17,7 @@ Ensure you have Docker installed and running. Use ```docker info``` to test you 
 Build the image (only required the first time, or if dependencies change):
 
 ```bash
-docker build -t forecast-research:latest 
+docker build -t forecast-research:latest .
 ```
 
 Launch a container with the repository mounted so changes are picked up automatically, and port 8888 forwarded for jupyter notebooks.

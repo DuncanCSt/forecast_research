@@ -6,6 +6,8 @@ dependencies:
   - python =3.11
   - numpy
   - pandas
+  - scipy
+  - yfinance
   - scikit-learn
   - rpy2           # Python ↔ R bridge
   - matplotlib

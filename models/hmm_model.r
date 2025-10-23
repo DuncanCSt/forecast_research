@@ -45,7 +45,7 @@ fit_hmm <- function(y,
     hid_fml <- NULL
   }
   if (!is.null(obs_formula)) {
-    obs_fml <- list(y = obs_formula)
+    obs_fml <- list(y = stats::as.formula(obs_formula))
   } else {
     obs_fml <- NULL
   }
