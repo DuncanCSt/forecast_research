@@ -17,7 +17,7 @@ Place‑holders (coming soon)
 Example usage
 -------------
 ```python
-from forecast_wrapper import forecast_model
+from models.forecast_wrapper import forecast_model
 
 # LSTM (univariate)
 forecast_model(model="LSTM", y_train=y, steps=12)
@@ -62,16 +62,16 @@ _forecast_hmm_r = None
 
 def _load_r_helper(func_name: str, filename: str):
     """Source an R helper file and return a callable from R globalenv."""
-    helper_path = pathlib.Path(__file__).resolve().parent / "models" / filename
+    helper_path = pathlib.Path(__file__).resolve().parent / filename
     if not helper_path.exists():
-        raise FileNotFoundError(f"models/{filename} not found relative to forecast_wrapper.py")
+        raise FileNotFoundError(f"{filename} not found next to forecast_wrapper.py")
     ro.r.source(str(helper_path))
     return ro.globalenv[func_name]
 
 # ---------------------------------------------------------------------------
 # Local LSTM back‑end (pure Python)
 # ---------------------------------------------------------------------------
-from forecast_research.models.lstm_model import forecast_lstm
+from .lstm_model import forecast_lstm
 
 __all__ = ["forecast_model"]
 

@@ -4,9 +4,17 @@
 # ----------------------------------------------------
 # Run from your conda env with:  python test_wrapper.py
 
+import pathlib
+import sys
+
 import numpy as np
-from forecast_wrapper import forecast_model
 import matplotlib.pyplot as plt
+
+ROOT = pathlib.Path(__file__).resolve().parent
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from models.forecast_wrapper import forecast_model
 
 def _mixture_mean_std(means: np.ndarray, sds: np.ndarray, weights: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     """Return the mixture mean and standard deviation for each step."""
@@ -112,4 +120,3 @@ plt.axvline(len(y_train) - 0.5, color="grey", ls="--")
 plt.legend()
 plt.title("Wrapper smoke test")
 plt.show()
-

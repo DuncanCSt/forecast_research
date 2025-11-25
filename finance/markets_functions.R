@@ -51,6 +51,11 @@ get_markets_data <- function(start_date, end_date, period = "weeks") {
     zoo::coredata(filtered_data),
     check.names = FALSE
   )
+  na_fraction <- colMeans(is.na(result))
+  drop_cols <- setdiff(names(na_fraction[na_fraction > 0.15]), "Date")
+  if (length(drop_cols)) {
+    result <- result[, setdiff(names(result), drop_cols), drop = FALSE]
+  }
   row.names(result) <- as.character(dates)
   result
 }
