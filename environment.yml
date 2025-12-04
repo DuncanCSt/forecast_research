@@ -9,6 +9,7 @@ dependencies:
   - scipy
   - yfinance
   - scikit-learn
+  - pytest
   - rpy2           # Python ↔ R bridge
   - matplotlib
   # TensorFlow/Keras: on CPU you can stay with the conda build;
@@ -29,3 +30,7 @@ dependencies:
   - gxx_linux-64
   # ── Jupyter (optional) ──────────────────────────────────────────────────────
   - jupyterlab
+
+  # ── pip packages (optional) ─────────────────────────────────────────────────
+  - pip:
+    - gmr

@@ -36,3 +36,9 @@ or start Jupyter Lab:
 ```bash
 jupyter lab --ip=0.0.0.0 --no-browser --allow-root
 ```
+
+Run the Python tests with pytest:
+
+```bash
+pytest
+```
