@@ -43,12 +43,13 @@ get_markets_data <- function(start_date,
       "Canada_Consumer_Discretionary_Index", "Canada_Corporate_Bonds",
       "Canada_Government_Bonds", "US_oil_gas", "Global_Materials",
       "US_Real_Estate", "SP_500", "Crude_Oil_Futures", "Gold_Futures",
-      "Copper_Futures"
+      "Copper_Futures", "USD_to_CAD", "Shipping_Futures"
     ),
     etf_ticker = c(
       "XIC.TO", "XFN.TO", "XEG.TO", "XMA.TO", "XIT.TO", "XUT.TO",
       "XST.TO", "XRE.TO", "XHC.TO", "XMD.TO", "XCB.TO", "XGB.TO",
-      "IEO", "MXI", "VNQ", "SPY", "CL=F", "GC=F", "HG=F"
+      "IEO", "MXI", "VNQ", "SPY", "CL=F", "GC=F", "HG=F", "CAD=X",
+      "BDRY"
     ),
     stringsAsFactors = FALSE
   )
