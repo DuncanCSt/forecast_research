@@ -549,7 +549,7 @@ fit_hmm <- function(
     horseshoe = FALSE,
     init = NULL
   ) {
-  hid_model <- hmmTMB::MarkovChain$new(
+  hid_model <- MarkovChain$new(
     data = data,
     n_states = n_states,
     formula = hid_formula,
@@ -557,7 +557,7 @@ fit_hmm <- function(
     #horseshoe = horseshoe
   )
 
-  obs_model <- hmmTMB::Observation$new(
+  obs_model <- Observation$new(
     data = data,
     n_states = n_states,
     dists = setNames(list("norm"), obs_name),
@@ -573,11 +573,11 @@ fit_hmm <- function(
   )
   if (!is.null(init)) {
     # If a model is passed return the model on updated data without re-training.
-    hmm <- hmmTMB::HMM$new(init = init, hid = hid_model, obs = obs_model)
+    hmm <- HMM$new(init = init, hid = hid_model, obs = obs_model)
     return(hmm)
   }
 
-  hmm <- hmmTMB::HMM$new(hid = hid_model, obs = obs_model)
+  hmm <- HMM$new(hid = hid_model, obs = obs_model)
   hmm$fit(silent = TRUE)
   hmm
 }
