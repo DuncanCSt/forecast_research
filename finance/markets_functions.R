@@ -288,14 +288,16 @@ plot_na_matrix <- function(data, title = "NA Values in data", savefig = NULL) {
   }
 }
 
-train_test_split <- function(data, training_period, testing_period, samples) {
+train_test_split <- function(data, training_period, testing_period, samples, max_test_size=0) {
   if (training_period + samples*testing_period > nrow(data)) {
     warning("Insufficent data to produce non-overlaping test sets.")
   }
   n_rows <- nrow(data)
+  # If max_test_size is provided, use it to ensure identical test start points
+  max_test_size <- max(max_test_size, testing_period)
   split_index <- as.integer(seq(
     from = training_period,
-    to = n_rows - testing_period,
+    to = n_rows - max_test_size,
     length.out = samples
   ))
 
