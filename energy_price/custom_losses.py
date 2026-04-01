@@ -1,5 +1,5 @@
 import tensorflow as tf
-
+import keras
 
 def dirichlet_layer(evidence):
     alpha = evidence + 1
@@ -8,7 +8,7 @@ def dirichlet_layer(evidence):
     return probs, alpha, S
 
 
-@tf.keras.saving.register_keras_serializable(package='energy_hmm')
+@keras.saving.register_keras_serializable(package='energy_hmm')
 class EvidentialLoss(tf.keras.losses.Loss):
     def __init__(self, annealing_rate=100.0, max_annealing_rate=0.2, name='evidential_loss'):
         super().__init__(name=name)
@@ -44,13 +44,13 @@ class AnnealingCallback(tf.keras.callbacks.Callback):
             self.model.loss.current_epoch.assign(tf.cast(epoch, tf.float32))
 
 
-@tf.keras.saving.register_keras_serializable(package='energy_hmm')
+@keras.saving.register_keras_serializable(package='energy_hmm')
 def evidential_kl_divergence(y_true, y_pred):
     probs, _, _ = dirichlet_layer(y_pred)
     return tf.keras.losses.kullback_leibler_divergence(y_true, probs)
 
 
-@tf.keras.saving.register_keras_serializable(package='energy_hmm')
+@keras.saving.register_keras_serializable(package='energy_hmm')
 def cross_entropy_loss(y_true, y_pred):
     probs, _, _ = dirichlet_layer(y_pred)
     return tf.keras.losses.categorical_crossentropy(y_true, probs)
