@@ -467,6 +467,8 @@ plot_tsx_state_series <- function(tsx_state_data,
 
   tsx_state_data <- as.data.frame(tsx_state_data)
   tsx_state_data$PlotDate <- as.Date(rownames(tsx_state_data))
+  tsx_state_data <- tsx_state_data %>%
+    rename(test_col = 1)
 
   base_aes <- ggplot2::aes(
     x = PlotDate,
