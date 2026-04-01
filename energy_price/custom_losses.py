@@ -10,8 +10,8 @@ def dirichlet_layer(evidence):
 
 @keras.saving.register_keras_serializable(package='energy_hmm')
 class EvidentialLoss(tf.keras.losses.Loss):
-    def __init__(self, annealing_rate=100.0, max_annealing_rate=0.2, name='evidential_loss'):
-        super().__init__(name=name)
+    def __init__(self, annealing_rate=100.0, max_annealing_rate=0.2, name='evidential_loss', **kwargs):
+        super().__init__(name=name, **kwargs)
         self.annealing_rate     = float(annealing_rate)
         self.max_annealing_rate = float(max_annealing_rate)
         self.current_epoch      = tf.Variable(0.0, trainable=False, dtype=tf.float32)
