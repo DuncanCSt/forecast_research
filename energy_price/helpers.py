@@ -1,5 +1,6 @@
 import rpy2.robjects as robjects
 import numpy as np
+import matplotlib.pyplot as plt
 
 readRDS = robjects.r['readRDS']
 
