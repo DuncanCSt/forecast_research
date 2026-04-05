@@ -12,7 +12,7 @@ def dirichlet_layer(evidence):
 class EvidentialLoss(tf.keras.losses.Loss):
     def __init__(self, loss_type='mse', annealing_rate=100.0, max_annealing_rate=0.2, name='evidential_loss', **kwargs):
         super().__init__(name=name, **kwargs)
-        if loss_type not in ('mse', 'mse_S', 'log', 'digamma', 'cross_entropy'):
+        if loss_type not in ('mse', 'log', 'digamma', 'cross_entropy'):
             raise ValueError(f"loss_type must be 'mse', 'log', 'digamma', or 'cross_entropy', got '{loss_type}'")
         self.loss_type          = loss_type
         self.annealing_rate     = float(annealing_rate)
@@ -46,18 +46,6 @@ class EvidentialLoss(tf.keras.losses.Loss):
         )
         return loglikelihood_err + loglikelihood_var + self._annealed_kl(y_true, alpha, num_classes)
 
-    def _annealed_S(self, alpha):
-        S = tf.reduce_sum(alpha, axis=-1, keepdims=True)
-        annealing_coef = tf.minimum(self.max_annealing_rate, self.current_epoch / self.annealing_rate)
-        return S * annealing_coef
-    
-    def _mse_loss_S(self, y_true, alpha, S, num_classes):
-        loglikelihood_err = tf.reduce_sum((y_true - (alpha / S)) ** 2, axis=-1, keepdims=True)
-        loglikelihood_var = tf.reduce_sum(
-            alpha * (S - alpha) / (S * S * (S + 1)), axis=-1, keepdims=True
-        )
-        return loglikelihood_err + loglikelihood_var + self._annealed_S(alpha)
-
     def _log_loss(self, y_true, alpha, S, num_classes):
         A = tf.reduce_sum(y_true * (tf.math.log(S) - tf.math.log(alpha)), axis=-1, keepdims=True)
         return A + self._annealed_kl(y_true, alpha, num_classes)
@@ -68,7 +56,7 @@ class EvidentialLoss(tf.keras.losses.Loss):
 
     def call(self, y_true, evidence):
         if self.loss_type == 'cross_entropy':
-            probs = tf.nn.softmax(evidence, axis=-1)
+            probs = evidence
             return tf.reduce_mean(
                 tf.keras.losses.categorical_crossentropy(y_true, probs)
             )
@@ -79,8 +67,6 @@ class EvidentialLoss(tf.keras.losses.Loss):
 
         if self.loss_type == 'mse':
             loss = self._mse_loss(y_true, alpha, S, num_classes)
-        elif self.loss_type == 'mse_S':
-            loss = self._mse_loss_S(y_true, alpha, S, num_classes)
         elif self.loss_type == 'log':
             loss = self._log_loss(y_true, alpha, S, num_classes)
         else:
