@@ -38,6 +38,10 @@ class EvidentialLoss(tf.keras.losses.Loss):
         annealing_coef = tf.minimum(self.max_annealing_rate, self.current_epoch / self.annealing_rate)
         kl_alpha = (alpha - 1) * (1 - y_true) + 1
         return annealing_coef * self._kl_divergence(kl_alpha, num_classes)
+    
+    def _annealed_S_loss(self, S):
+        annealing_coef = tf.minimum(self.max_annealing_rate, self.current_epoch / self.annealing_rate)
+        return annealing_coef * tf.math.log(S)
 
     def _mse_loss(self, y_true, alpha, S, num_classes):
         loglikelihood_err = tf.reduce_sum((y_true - (alpha / S)) ** 2, axis=-1, keepdims=True)
@@ -52,7 +56,7 @@ class EvidentialLoss(tf.keras.losses.Loss):
 
     def _digamma_loss(self, y_true, alpha, S, num_classes):
         A = tf.reduce_sum(y_true * (tf.math.digamma(S) - tf.math.digamma(alpha)), axis=-1, keepdims=True)
-        return A + self._annealed_kl(y_true, alpha, num_classes)
+        return A + self._annealed_S_loss(S)
 
     def call(self, y_true, evidence):
         if self.loss_type == 'cross_entropy':
