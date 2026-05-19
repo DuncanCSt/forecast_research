@@ -1,8 +1,10 @@
 import tensorflow as tf
 import keras
 
+EPS = np.finfo(np.float32).eps
+
 def dirichlet_layer(evidence):
-    alpha = evidence + 1
+    alpha = evidence
     S = tf.reduce_sum(alpha, axis=-1, keepdims=True)
     probs = alpha / S
     return probs, alpha, S
@@ -57,6 +59,12 @@ class EvidentialLoss(tf.keras.losses.Loss):
     def _digamma_loss(self, y_true, alpha, S, num_classes):
         A = tf.reduce_sum(y_true * (tf.math.digamma(S) - tf.math.digamma(alpha)), axis=-1, keepdims=True)
         return A + self._annealed_S_loss(S)
+    
+    def _loglikelihood_loss(self, y_true, alpha):
+        alpha_0 = tf.reduce_sum(alpha, axis=1, keepdims=True)
+        log_B = tf.reduce_sum(tf.math.lgamma(alpha), axis=1, keepdims=True) - tf.math.lgamma(alpha_0)
+        cross = tf.reduce_sum((alpha - 1.) * tf.math.log(y_true + EPS), axis=1, keepdims=True)
+        return tf.reduce_mean(log_B - cross)
 
     def call(self, y_true, evidence):
         if self.loss_type == 'cross_entropy':
@@ -73,6 +81,8 @@ class EvidentialLoss(tf.keras.losses.Loss):
             loss = self._mse_loss(y_true, alpha, S, num_classes)
         elif self.loss_type == 'log':
             loss = self._log_loss(y_true, alpha, S, num_classes)
+        elif self.loss_type == 'loglikelihood':
+            loss = self._loglikelihood_loss(y_true, alpha)
         else:
             loss = self._digamma_loss(y_true, alpha, S, num_classes)
 
