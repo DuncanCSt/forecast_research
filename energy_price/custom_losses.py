@@ -14,7 +14,7 @@ def dirichlet_layer(evidence):
 class EvidentialLoss(tf.keras.losses.Loss):
     def __init__(self, loss_type='mse', annealing_rate=100.0, max_annealing_rate=0.2, name='evidential_loss', **kwargs):
         super().__init__(name=name, **kwargs)
-        if loss_type not in ('mse', 'log', 'digamma', 'cross_entropy'):
+        if loss_type not in ('mse', 'log', 'digamma', 'cross_entropy', 'loglikelihood'):
             raise ValueError(f"loss_type must be 'mse', 'log', 'digamma', or 'cross_entropy', got '{loss_type}'")
         self.loss_type          = loss_type
         self.annealing_rate     = float(annealing_rate)
